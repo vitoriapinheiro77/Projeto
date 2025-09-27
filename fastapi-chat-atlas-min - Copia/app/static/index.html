@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat mínimo — FastAPI + MongoDB Atlas</title>
+    <style>
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; padding: 0; }
+      header { padding: 12px 16px; background: #f2f2f2; border-bottom: 1px solid #ddd; }
+      main { max-width: 880px; margin: 0 auto; padding: 16px; }
+      #messages { border: 1px solid #ddd; height: 50vh; overflow-y: auto; padding: 8px; border-radius: 8px; }
+      .msg { margin: 6px 0; padding: 6px 10px; border-radius: 6px; background: #fafafa; }
+      .meta { color: #666; font-size: 12px; }
+      form { display: flex; gap: 8px; margin-top: 12px; }
+      input, button { padding: 10px; font-size: 16px; }
+      input[type="text"] { flex: 1; }
+      .row { display: flex; gap: 8px; margin-bottom: 8px; }
+      .row input { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <header><strong>Chat mínimo — FastAPI + MongoDB Atlas</strong></header>
+    <main>
+      <div class="row">
+        <input id="room" placeholder="sala (ex: geral)" />
+        <input id="username" placeholder="seu nome" />
+        <button id="connectBtn">Conectar</button>
+      </div>
+
+      <div id="messages"></div>
+
+      <form id="form" autocomplete="off">
+        <input id="input" type="text" placeholder="Digite sua mensagem..." />
+        <button>Enviar</button>
+      </form>
+    </main>
+
+    <script>
+      const $room = document.getElementById('room');
+      const $username = document.getElementById('username');
+      const $messages = document.getElementById('messages');
+      const $form = document.getElementById('form');
+      const $input = document.getElementById('input');
+      const $connectBtn = document.getElementById('connectBtn');
+
+      $room.value = localStorage.getItem('room') || 'geral';
+      $username.value = localStorage.getItem('username') || '';
+
+      let ws = null;
+
+      function appendMessage(item) {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        const when = new Date(item.created_at).toLocaleTimeString();
+        div.innerHTML = `<div class="meta">[${when}] <strong>${item.username}</strong> em <em>${item.room}</em></div>` +
+                        `<div>${item.content}</div>`;
+        $messages.appendChild(div);
+        $messages.scrollTop = $messages.scrollHeight;
+      }
+
+      function appendHistory(items) {
+        $messages.innerHTML = '';
+        items.forEach(appendMessage);
+      }
+
+      function connect() {
+        const room = ($room.value || 'geral').trim();
+        const username = ($username.value || 'anon').trim();
+        if (!room) return alert('Informe a sala');
+        if (!username) return alert('Informe o nome');
+
+        localStorage.setItem('room', room);
+        localStorage.setItem('username', username);
+
+        const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+        const url = `${wsProto}://${location.host}/ws/${encodeURIComponent(room)}`;
+        ws = new WebSocket(url);
+
+        ws.onmessage = (evt) => {
+          const data = JSON.parse(evt.data);
+          if (data.type === 'history') {
+            appendHistory(data.items || []);
+          } else if (data.type === 'message') {
+            appendMessage(data.item);
+          }
+        };
+
+        ws.onopen = () => console.log('WS conectado');
+        ws.onclose = () => console.log('WS desconectado');
+        ws.onerror = (e) => console.error('WS erro', e);
+      }
+
+      $connectBtn.addEventListener('click', () => {
+        if (ws) ws.close();
+        connect();
+      });
+
+      $form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const content = $input.value.trim();
+        if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({ content, username: $username.value }));
+        $input.value = '';
+      });
+    </script>
+  </body>
+</html>

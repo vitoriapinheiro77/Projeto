@@ -1,29 +1,28 @@
-# FastAPI Chat (mínimo) + MongoDB Atlas
+## O Processo
 
-## Passos
-1. Crie um cluster gratuito no **MongoDB Atlas** (https://cloud.mongodb.com).
-2. Em **Database Access**, crie um usuário e senha.
-3. Em **Network Access**, libere seu IP (ou 0.0.0.0/0 para testes).
-4. Copie a **Connection String** (driver MongoDB, `mongodb+srv://...`).
-5. Faça uma cópia de `.env.example` para `.env` e cole sua string na `MONGO_URL`.
-6. Rode localmente:
+1. Clonar o Repositório
 
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
+2. Instalar Dependências
+Instale todas as bibliotecas necessárias listadas no requirements.txt:
 
 pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
 
-Abra: http://localhost:8000  (cliente simples)
-Docs: http://localhost:8000/docs
+3. Configurar Variáveis de Ambiente (.env)
+Crie um arquivo chamado .env na raiz do projeto e preencha com a sua chave de conexão do MongoDB Atlas.
 
-## Endpoints principais
-- **WebSocket**: `ws://localhost:8000/ws/{room}`
-- **Histórico REST**: `GET /rooms/{room}/messages?limit=20`
-- **Enviar (REST)**: `POST /rooms/{room}/messages`
+-- Importante: A chave deve conter seu usuário e senha do banco de dados e estar entre aspas duplas.
 
-> Observação: a primeira conexão cria a coleção automaticamente.
+
+## Como Rodar o Projeto
+
+4. Iniciar o Servidor
+Execute o seguinte comando no terminal. O flag --reload permite que o servidor reinicie automaticamente ao detectar mudanças no código.
+
+comando: uvicorn app.main:app --reload
+
+2. Acessar o Chat
+Com o servidor rodando, acesse a interface do chat pelo navegador:
+
+http://127.0.0.1:8000
+
+
